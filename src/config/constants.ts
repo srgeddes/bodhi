@@ -1,0 +1,9 @@
+export const DEFAULT_CURRENCY = "USD";
+export const TRANSACTION_SYNC_BATCH_SIZE = 500;
+export const JWT_COOKIE_NAME = "bodhi_auth_token";
+export const JWT_EXPIRY_SECONDS = 60 * 60 * 24 * 7; // 7 days
+export const BCRYPT_ROUNDS = 12;
+export const DEFAULT_PAGE_SIZE = 50;
+export const MAX_PAGE_SIZE = 200;
+export const TRANSACTION_SYNC_LOOKBACK_DAYS = 90;
+export const TRANSACTION_SYNC_OVERLAP_DAYS = 7;

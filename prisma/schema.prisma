@@ -1,0 +1,164 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ──────────────────────────────────────────────
+// Enums
+// ──────────────────────────────────────────────
+
+enum AccountType {
+  DEPOSITORY
+  CREDIT
+  INVESTMENT
+  LOAN
+  BROKERAGE
+  OTHER
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  DEGRADED
+  DISCONNECTED
+}
+
+enum CategorySource {
+  TELLER
+  AI
+  RULE
+  USER_OVERRIDE
+}
+
+// ──────────────────────────────────────────────
+// Models
+// ──────────────────────────────────────────────
+
+model User {
+  id              String   @id @default(uuid())
+  email           String   @unique
+  passwordHash    String   @map("password_hash")
+  name            String?
+  monthlyBudget   Decimal? @map("monthly_budget") @db.Decimal(19, 4)
+  dashboardLayout Json?    @map("dashboard_layout")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  tellerEnrollments     TellerEnrollment[]
+  accounts              Account[]
+  transactions          Transaction[]
+  subscriptionOverrides SubscriptionOverride[]
+
+  @@map("users")
+}
+
+model TellerEnrollment {
+  id              String           @id @default(uuid())
+  userId          String           @map("user_id")
+  accessToken     String           @map("access_token")
+  enrollmentId    String           @unique @map("enrollment_id")
+  institutionName String?          @map("institution_name")
+  status          EnrollmentStatus @default(ACTIVE)
+  lastSyncedDate  DateTime?        @map("last_synced_date") @db.Date
+  lastSyncedAt    DateTime?        @map("last_synced_at")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accounts Account[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("teller_enrollments")
+}
+
+model Account {
+  id                  String      @id @default(uuid())
+  userId              String      @map("user_id")
+  tellerEnrollmentId  String      @map("teller_enrollment_id")
+  tellerAccountId     String      @unique @map("teller_account_id")
+  name                String
+  officialName        String?     @map("official_name")
+  type                AccountType
+  subtype             String?
+  mask                String?
+  currentBalance      Decimal?    @map("current_balance") @db.Decimal(19, 4)
+  availableBalance    Decimal?    @map("available_balance") @db.Decimal(19, 4)
+  limitAmount         Decimal?    @map("limit_amount") @db.Decimal(19, 4)
+  currency            String      @default("USD")
+  institutionId       String?     @map("institution_id")
+  isHidden            Boolean     @default(false) @map("is_hidden")
+  lastSyncedAt        DateTime?   @map("last_synced_at")
+  createdAt           DateTime    @default(now()) @map("created_at")
+  updatedAt           DateTime    @updatedAt @map("updated_at")
+
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tellerEnrollment  TellerEnrollment @relation(fields: [tellerEnrollmentId], references: [id], onDelete: Cascade)
+  transactions      Transaction[]
+
+  @@index([userId])
+  @@index([tellerEnrollmentId])
+  @@index([type])
+  @@index([userId, type])
+  @@map("accounts")
+}
+
+model Transaction {
+  id                   String          @id @default(uuid())
+  userId               String          @map("user_id")
+  accountId            String          @map("account_id")
+  tellerTransactionId  String          @unique @map("teller_transaction_id")
+  amount               Decimal         @db.Decimal(19, 4)
+  currency             String          @default("USD")
+  date                 DateTime        @db.Date
+  name                 String
+  merchantName         String?         @map("merchant_name")
+  cleanMerchantName    String?         @map("clean_merchant_name")
+  category             String?
+  subcategory          String?
+  categoryConfidence   Decimal?        @map("category_confidence") @db.Decimal(5, 4)
+  categorySource       CategorySource? @map("category_source")
+  isTransfer           Boolean         @default(false) @map("is_transfer")
+  linkedTransferId     String?         @map("linked_transfer_id")
+  isPending            Boolean         @default(false) @map("is_pending")
+  isRecurring          Boolean         @default(false) @map("is_recurring")
+  isExcluded           Boolean         @default(false) @map("is_excluded")
+  note                 String?
+  tellerType           String?         @map("teller_type")
+  tellerStatus         String?         @map("teller_status")
+  processingStatus     String?         @map("processing_status")
+  createdAt            DateTime        @default(now()) @map("created_at")
+  updatedAt            DateTime        @updatedAt @map("updated_at")
+
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account         Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  linkedTransfer  Transaction? @relation("TransferLink", fields: [linkedTransferId], references: [id])
+  linkedTransfers Transaction[] @relation("TransferLink")
+
+  @@index([userId])
+  @@index([accountId])
+  @@index([userId, date])
+  @@index([userId, category])
+  @@index([date])
+  @@index([isPending])
+  @@index([isTransfer])
+  @@index([merchantName])
+  @@index([tellerType])
+  @@map("transactions")
+}
+
+model SubscriptionOverride {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  merchantName String   @map("merchant_name")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, merchantName])
+  @@index([userId])
+  @@map("subscription_overrides")
+}
