@@ -71,13 +71,18 @@ export function handleApiError(error: unknown): NextResponse {
     );
   }
 
+  const debugMsg = error instanceof Error ? error.message : "Unknown error";
+  const debugName = error instanceof Error ? error.name : "UnknownError";
+
   logger.error("Unhandled error", {
-    message: error instanceof Error ? error.message : "Unknown error",
+    message: debugMsg,
+    name: debugName,
     stack: error instanceof Error ? error.stack : undefined,
   });
 
+  // TEMP: surface error details for production debugging
   return NextResponse.json(
-    { error: "Internal server error" },
+    { error: "Internal server error", debug: { name: debugName, message: debugMsg } },
     { status: 500 }
   );
 }
