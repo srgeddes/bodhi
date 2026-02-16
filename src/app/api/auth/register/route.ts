@@ -19,20 +19,13 @@ export const POST = withoutAuth(async (request: NextRequest) => {
   const dto = RegisterSchema.parse(body);
   const result = await userService.register(dto);
 
-  const responseBody: Record<string, unknown> = {
+  const response = NextResponse.json({
     data: {
-      status: result.status,
       user: UserMapper.toDto(result.user),
-      message: "Check your email to verify your account",
     },
-  };
+  }, { status: 201 });
 
-  const response = NextResponse.json(responseBody, { status: 201 });
-
-  // Only set cookie if fully authenticated (e.g. demo users)
-  if (result.status === "authenticated" && result.token) {
-    setAuthCookie(response, result.token);
-  }
+  setAuthCookie(response, result.token);
 
   return response;
 });

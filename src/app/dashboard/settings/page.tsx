@@ -2,19 +2,17 @@
 
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
-import { Sun, Moon, Monitor, LogOut, ShieldCheck, Copy, Check } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Sun, Moon, Monitor, LogOut } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { BlurFade } from "@/components/ui/blur-fade";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PageContainer } from "@/components/layout";
 import { TellerConnectButton } from "@/features/accounts/components/TellerConnectButton";
 import { useAuthStore } from "@/store/auth.store";
 import { useFetch } from "@/hooks/useFetch";
-import { apiClient } from "@/lib/api-client";
 
 interface ConnectedAccount {
   id: string;
@@ -27,12 +25,7 @@ export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
-  const fetchUser = useAuthStore((s) => s.fetchUser);
   const [mounted, setMounted] = useState(false);
-  const [mfaLoading, setMfaLoading] = useState(false);
-  const [backupCodes, setBackupCodes] = useState<string[] | null>(null);
-  const [mfaError, setMfaError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
 
   const { data: accounts, refetch } = useFetch<ConnectedAccount[]>("/api/accounts");
 
@@ -43,48 +36,6 @@ export default function SettingsPage() {
   const initials = user?.name
     ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : user?.email?.slice(0, 2).toUpperCase() ?? "U";
-
-  const handleMfaToggle = async (enabled: boolean) => {
-    setMfaLoading(true);
-    setMfaError(null);
-    setBackupCodes(null);
-    try {
-      const res = await apiClient.post<{ data: { message: string; backupCodes?: string[] } }>(
-        "/api/auth/mfa",
-        { action: enabled ? "enable" : "disable" }
-      );
-      if (res.data.backupCodes) {
-        setBackupCodes(res.data.backupCodes);
-      }
-      await fetchUser();
-    } catch (err) {
-      setMfaError(err instanceof Error ? err.message : "Failed to update MFA");
-    } finally {
-      setMfaLoading(false);
-    }
-  };
-
-  const handleRegenerateBackupCodes = async () => {
-    setMfaLoading(true);
-    setMfaError(null);
-    try {
-      const res = await apiClient.post<{ data: { backupCodes: string[] } }>(
-        "/api/auth/mfa/backup-codes"
-      );
-      setBackupCodes(res.data.backupCodes);
-    } catch (err) {
-      setMfaError(err instanceof Error ? err.message : "Failed to regenerate codes");
-    } finally {
-      setMfaLoading(false);
-    }
-  };
-
-  const handleCopyBackupCodes = async () => {
-    if (!backupCodes) return;
-    await navigator.clipboard.writeText(backupCodes.join("\n"));
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
 
   return (
     <PageContainer>
@@ -111,85 +62,8 @@ export default function SettingsPage() {
           </Card>
         </BlurFade>
 
-        {/* Security */}
-        <BlurFade delay={0.15}>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ShieldCheck className="h-5 w-5" />
-                Security
-              </CardTitle>
-              <CardDescription>
-                Manage two-factor authentication for your account
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {mfaError && (
-                <Alert variant="destructive">
-                  <AlertDescription>{mfaError}</AlertDescription>
-                </Alert>
-              )}
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">Two-factor authentication</p>
-                  <p className="text-xs text-muted-foreground">
-                    Require a verification code sent to your email on each sign-in
-                  </p>
-                </div>
-                <Switch
-                  checked={user?.mfaEnabled ?? false}
-                  onCheckedChange={handleMfaToggle}
-                  disabled={mfaLoading}
-                />
-              </div>
-
-              {backupCodes && (
-                <>
-                  <Separator />
-                  <div className="space-y-3">
-                    <p className="text-sm font-medium">Backup codes</p>
-                    <p className="text-xs text-muted-foreground">
-                      Save these codes somewhere safe. Each can only be used once.
-                    </p>
-                    <div className="grid grid-cols-2 gap-2 rounded-lg border border-border/50 bg-muted/30 p-4">
-                      {backupCodes.map((code, i) => (
-                        <code key={i} className="text-sm font-mono text-foreground">
-                          {code}
-                        </code>
-                      ))}
-                    </div>
-                    <Button variant="outline" size="sm" onClick={handleCopyBackupCodes}>
-                      {copied ? (
-                        <Check className="h-4 w-4" />
-                      ) : (
-                        <Copy className="h-4 w-4" />
-                      )}
-                      {copied ? "Copied" : "Copy codes"}
-                    </Button>
-                  </div>
-                </>
-              )}
-
-              {user?.mfaEnabled && !backupCodes && (
-                <>
-                  <Separator />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleRegenerateBackupCodes}
-                    disabled={mfaLoading}
-                  >
-                    Regenerate backup codes
-                  </Button>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </BlurFade>
-
         {/* Appearance */}
-        <BlurFade delay={0.2}>
+        <BlurFade delay={0.15}>
           <Card>
             <CardHeader>
               <CardTitle>Appearance</CardTitle>
@@ -233,7 +107,7 @@ export default function SettingsPage() {
         </BlurFade>
 
         {/* Connected Accounts */}
-        <BlurFade delay={0.3}>
+        <BlurFade delay={0.2}>
           <Card>
             <CardHeader>
               <CardTitle>Connected Accounts</CardTitle>
@@ -272,7 +146,7 @@ export default function SettingsPage() {
         </BlurFade>
 
         {/* Sign Out */}
-        <BlurFade delay={0.4}>
+        <BlurFade delay={0.3}>
           <Button variant="outline" onClick={logout}>
             <LogOut className="h-4 w-4" />
             Sign out

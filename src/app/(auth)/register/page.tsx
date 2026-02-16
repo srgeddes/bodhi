@@ -76,17 +76,12 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterForm) => {
     setServerError(null);
     try {
-      const status = await registerUser({
+      await registerUser({
         email: data.email,
         password: data.password,
         name: data.name,
       });
-
-      if (status === "verification_required") {
-        router.replace("/verify-email");
-      } else {
-        router.replace("/dashboard");
-      }
+      router.replace("/dashboard");
     } catch (err) {
       setServerError(err instanceof Error ? err.message : "Registration failed");
     }

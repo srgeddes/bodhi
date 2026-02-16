@@ -1,4 +1,4 @@
-import { LoginSchema, RegisterSchema, AuthResponseSchema } from "@/dtos/auth";
+import { LoginSchema, RegisterSchema } from "@/dtos/auth";
 
 describe("Auth DTOs", () => {
   describe("LoginSchema", () => {
@@ -81,40 +81,6 @@ describe("Auth DTOs", () => {
       });
 
       expect(result.name).toBeUndefined();
-    });
-  });
-
-  describe("AuthResponseSchema", () => {
-    it("parses a valid auth response with authenticated status", () => {
-      const result = AuthResponseSchema.parse({
-        status: "authenticated",
-        user: { id: "user-1", email: "user@example.com", name: "Alice", emailVerified: true, mfaEnabled: false },
-      });
-
-      expect(result.status).toBe("authenticated");
-      expect(result.user?.id).toBe("user-1");
-      expect(result.user?.email).toBe("user@example.com");
-    });
-
-    it("parses mfa_required response with tempToken", () => {
-      const result = AuthResponseSchema.parse({
-        status: "mfa_required",
-        user: { id: "user-1", email: "user@example.com", name: "Alice", emailVerified: true, mfaEnabled: true },
-        tempToken: "jwt.temp.token",
-      });
-
-      expect(result.status).toBe("mfa_required");
-      expect(result.tempToken).toBe("jwt.temp.token");
-    });
-
-    it("parses verification_required response", () => {
-      const result = AuthResponseSchema.parse({
-        status: "verification_required",
-        message: "Check your email",
-      });
-
-      expect(result.status).toBe("verification_required");
-      expect(result.message).toBe("Check your email");
     });
   });
 });

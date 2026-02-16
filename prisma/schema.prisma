@@ -33,12 +33,6 @@ enum CategorySource {
   USER_OVERRIDE
 }
 
-enum OtpPurpose {
-  EMAIL_VERIFICATION
-  MFA_LOGIN
-  MFA_ENABLE
-}
-
 // ──────────────────────────────────────────────
 // Models
 // ──────────────────────────────────────────────
@@ -48,9 +42,6 @@ model User {
   email           String   @unique
   passwordHash    String   @map("password_hash")
   name            String?
-  emailVerified   Boolean  @default(false) @map("email_verified")
-  mfaEnabled      Boolean  @default(false) @map("mfa_enabled")
-  isDemo          Boolean  @default(false) @map("is_demo")
   monthlyBudget   Decimal? @map("monthly_budget") @db.Decimal(19, 4)
   dashboardLayout Json?    @map("dashboard_layout")
   createdAt       DateTime @default(now()) @map("created_at")
@@ -60,8 +51,6 @@ model User {
   accounts              Account[]
   transactions          Transaction[]
   subscriptionOverrides SubscriptionOverride[]
-  otpCodes              OtpCode[]
-  backupCodes           BackupCode[]
 
   @@map("users")
 }
@@ -174,31 +163,3 @@ model SubscriptionOverride {
   @@map("subscription_overrides")
 }
 
-model OtpCode {
-  id        String     @id @default(uuid())
-  userId    String     @map("user_id")
-  codeHash  String     @map("code_hash")
-  purpose   OtpPurpose
-  expiresAt DateTime   @map("expires_at")
-  used      Boolean    @default(false)
-  createdAt DateTime   @default(now()) @map("created_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, purpose])
-  @@index([expiresAt])
-  @@map("otp_codes")
-}
-
-model BackupCode {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
-  codeHash  String   @map("code_hash")
-  used      Boolean  @default(false)
-  createdAt DateTime @default(now()) @map("created_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@map("backup_codes")
-}

@@ -19,27 +19,13 @@ export const POST = withoutAuth(async (request: NextRequest) => {
   const dto = LoginSchema.parse(body);
   const result = await userService.login(dto);
 
-  const responseBody: Record<string, unknown> = {
+  const response = NextResponse.json({
     data: {
-      status: result.status,
       user: UserMapper.toDto(result.user),
     },
-  };
+  });
 
-  if (result.status === "mfa_required") {
-    (responseBody.data as Record<string, unknown>).tempToken = result.tempToken;
-  }
-
-  if (result.status === "verification_required") {
-    (responseBody.data as Record<string, unknown>).message = "Please verify your email address";
-  }
-
-  const response = NextResponse.json(responseBody);
-
-  // Only set auth cookie if fully authenticated
-  if (result.status === "authenticated" && result.token) {
-    setAuthCookie(response, result.token);
-  }
+  setAuthCookie(response, result.token);
 
   return response;
 });

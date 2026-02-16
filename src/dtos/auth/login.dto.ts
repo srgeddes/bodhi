@@ -6,18 +6,3 @@ export const LoginSchema = z.object({
 });
 
 export type LoginDto = z.infer<typeof LoginSchema>;
-
-export const AuthResponseSchema = z.object({
-  status: z.enum(["authenticated", "verification_required", "mfa_required"]),
-  user: z.object({
-    id: z.string(),
-    email: z.string(),
-    name: z.string().nullable(),
-    emailVerified: z.boolean(),
-    mfaEnabled: z.boolean(),
-  }).optional(),
-  tempToken: z.string().optional(),
-  message: z.string().optional(),
-});
-
-export type AuthResponseDto = z.infer<typeof AuthResponseSchema>;
