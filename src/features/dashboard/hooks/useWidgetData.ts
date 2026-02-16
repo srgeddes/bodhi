@@ -7,7 +7,7 @@ import { useFetch } from "@/hooks/useFetch";
 import type { AccountResponseDto } from "@/dtos/account";
 import type { TransactionResponseDto } from "@/dtos/transaction";
 import type { PaginatedResponse } from "@/types/api.types";
-import { isExpense, isIncome } from "@/utils/transaction.utils";
+import { classifyTransaction } from "@/utils/transaction.utils";
 
 interface AccountsApiResponse {
   data: AccountResponseDto[];
@@ -98,7 +98,9 @@ export function useWidgetData(type: string) {
         if (!transactionsRaw?.data) return null;
         const categoryMap = new Map<string, number>();
         for (const t of transactionsRaw.data) {
-          if (isExpense(t.amount)) {
+          const flow = classifyTransaction(t);
+          if (flow === "transfer") continue;
+          if (flow === "expense") {
             const cat = t.category ?? "Other";
             categoryMap.set(cat, (categoryMap.get(cat) ?? 0) + Math.abs(t.amount));
           }
@@ -120,11 +122,13 @@ export function useWidgetData(type: string) {
         if (!transactionsRaw?.data) return null;
         const monthlyMap = new Map<string, { income: number; expenses: number }>();
         for (const t of transactionsRaw.data) {
+          const flow = classifyTransaction(t);
+          if (flow === "transfer") continue;
           const d = new Date(t.date);
           const key = d.toLocaleDateString("en-US", { month: "short" });
           const entry = monthlyMap.get(key) ?? { income: 0, expenses: 0 };
-          if (isIncome(t.amount)) {
-            entry.income += t.amount;
+          if (flow === "income") {
+            entry.income += Math.abs(t.amount);
           } else {
             entry.expenses += Math.abs(t.amount);
           }

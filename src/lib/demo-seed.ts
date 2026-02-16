@@ -397,6 +397,8 @@ export async function seedDemoUser(): Promise<string> {
       email: DEMO_EMAIL,
       passwordHash,
       name: DEMO_NAME,
+      emailVerified: true,
+      isDemo: true,
       monthlyBudget: 4000,
       dashboardLayout: {
         widgets: [

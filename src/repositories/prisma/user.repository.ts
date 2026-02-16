@@ -33,4 +33,18 @@ export class PrismaUserRepository extends BaseRepository<User> implements IUserR
     const count = await prisma.user.count({ where: { email } });
     return count > 0;
   }
+
+  async updateEmailVerified(userId: string, emailVerified: boolean): Promise<void> {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { emailVerified },
+    });
+  }
+
+  async updateMfaEnabled(userId: string, mfaEnabled: boolean): Promise<void> {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { mfaEnabled },
+    });
+  }
 }

@@ -29,12 +29,12 @@ describe("Auth DTOs", () => {
     it("parses valid registration data", () => {
       const result = RegisterSchema.parse({
         email: "user@example.com",
-        password: "password123",
+        password: "Password123",
         name: "Test User",
       });
 
       expect(result.email).toBe("user@example.com");
-      expect(result.password).toBe("password123");
+      expect(result.password).toBe("Password123");
       expect(result.name).toBe("Test User");
     });
 
@@ -42,7 +42,25 @@ describe("Auth DTOs", () => {
       expect(() =>
         RegisterSchema.parse({
           email: "user@example.com",
-          password: "short",
+          password: "Sh0rt",
+        })
+      ).toThrow();
+    });
+
+    it("rejects password without uppercase", () => {
+      expect(() =>
+        RegisterSchema.parse({
+          email: "user@example.com",
+          password: "password123",
+        })
+      ).toThrow();
+    });
+
+    it("rejects password without number", () => {
+      expect(() =>
+        RegisterSchema.parse({
+          email: "user@example.com",
+          password: "Passwordonly",
         })
       ).toThrow();
     });
@@ -51,7 +69,7 @@ describe("Auth DTOs", () => {
       expect(() =>
         RegisterSchema.parse({
           email: "not-email",
-          password: "password123",
+          password: "Password123",
         })
       ).toThrow();
     });
@@ -59,7 +77,7 @@ describe("Auth DTOs", () => {
     it("allows optional name", () => {
       const result = RegisterSchema.parse({
         email: "user@example.com",
-        password: "password123",
+        password: "Password123",
       });
 
       expect(result.name).toBeUndefined();
@@ -67,15 +85,36 @@ describe("Auth DTOs", () => {
   });
 
   describe("AuthResponseSchema", () => {
-    it("parses a valid auth response", () => {
+    it("parses a valid auth response with authenticated status", () => {
       const result = AuthResponseSchema.parse({
-        user: { id: "user-1", email: "user@example.com", name: "Alice" },
-        token: "jwt-token-value",
+        status: "authenticated",
+        user: { id: "user-1", email: "user@example.com", name: "Alice", emailVerified: true, mfaEnabled: false },
       });
 
-      expect(result.user.id).toBe("user-1");
-      expect(result.user.email).toBe("user@example.com");
-      expect(result.token).toBe("jwt-token-value");
+      expect(result.status).toBe("authenticated");
+      expect(result.user?.id).toBe("user-1");
+      expect(result.user?.email).toBe("user@example.com");
+    });
+
+    it("parses mfa_required response with tempToken", () => {
+      const result = AuthResponseSchema.parse({
+        status: "mfa_required",
+        user: { id: "user-1", email: "user@example.com", name: "Alice", emailVerified: true, mfaEnabled: true },
+        tempToken: "jwt.temp.token",
+      });
+
+      expect(result.status).toBe("mfa_required");
+      expect(result.tempToken).toBe("jwt.temp.token");
+    });
+
+    it("parses verification_required response", () => {
+      const result = AuthResponseSchema.parse({
+        status: "verification_required",
+        message: "Check your email",
+      });
+
+      expect(result.status).toBe("verification_required");
+      expect(result.message).toBe("Check your email");
     });
   });
 });

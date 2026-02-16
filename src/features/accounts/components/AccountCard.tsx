@@ -1,62 +1,36 @@
 "use client";
 
-import { useState } from "react";
-import {
-  Building2,
-  CreditCard,
-  TrendingUp,
-  Landmark,
-  Wallet,
-} from "lucide-react";
-import { getInstitutionLogoUrl } from "@/utils/institution-logo.utils";
+import { InstitutionLogo } from "@/components/InstitutionLogo";
 import { formatCurrency, formatLabel } from "@/utils/format.utils";
 import { cn } from "@/lib/utils";
 import type { AccountResponseDto } from "@/dtos/account";
 
-const typeConfig: Record<
-  string,
-  { icon: typeof Building2; label: string }
-> = {
-  depository: { icon: Building2, label: "Bank Account" },
-  credit: { icon: CreditCard, label: "Credit Card" },
-  investment: { icon: TrendingUp, label: "Investment" },
-  brokerage: { icon: TrendingUp, label: "Brokerage" },
-  loan: { icon: Landmark, label: "Loan" },
+const typeLabels: Record<string, string> = {
+  depository: "Bank Account",
+  credit: "Credit Card",
+  investment: "Investment",
+  brokerage: "Brokerage",
+  loan: "Loan",
 };
-
-const defaultConfig = { icon: Wallet, label: "Account" };
 
 interface AccountCardProps {
   account: AccountResponseDto;
 }
 
 export function AccountCard({ account }: AccountCardProps) {
-  const config = typeConfig[account.type.toLowerCase()] ?? defaultConfig;
-  const Icon = config.icon;
+  const typeLabel = typeLabels[account.type.toLowerCase()] ?? "Account";
   const balance = account.displayBalance ?? account.currentBalance ?? 0;
   const isDebt = account.type.toLowerCase() === "credit" || account.type.toLowerCase() === "loan";
-
-  const [logoFailed, setLogoFailed] = useState(false);
-  const logoUrl = account.institutionName
-    ? getInstitutionLogoUrl(account.institutionName, 80)
-    : null;
 
   return (
     <div className="group flex items-center gap-4 rounded-xl border border-border/60 bg-card/50 px-4 py-3.5 transition-all duration-200 hover:border-border hover:shadow-sm">
       {/* Institution logo or type icon fallback */}
       <div className="shrink-0">
-        {logoUrl && !logoFailed ? (
-          <img
-            src={logoUrl}
-            alt={account.institutionName ?? ""}
-            className="size-9 rounded-lg object-contain"
-            onError={() => setLogoFailed(true)}
-          />
-        ) : (
-          <div className="flex size-9 items-center justify-center rounded-lg bg-muted/60">
-            <Icon className="size-4.5 text-muted-foreground" />
-          </div>
-        )}
+        <InstitutionLogo
+          institutionName={account.institutionName ?? account.name}
+          size={36}
+          className="rounded-lg"
+        />
       </div>
 
       {/* Account info */}
@@ -72,7 +46,7 @@ export function AccountCard({ account }: AccountCardProps) {
           )}
         </div>
         <span className="text-xs text-muted-foreground/70">
-          {account.subtype ? formatLabel(account.subtype) : config.label}
+          {account.subtype ? formatLabel(account.subtype) : typeLabel}
         </span>
       </div>
 

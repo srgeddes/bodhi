@@ -1,7 +1,12 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Plus } from "lucide-react";
+import {
+  useTellerConnect,
+  type TellerConnectEnrollment,
+  type TellerConnectFailure,
+} from "teller-connect-react";
 import { PageContainer } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,12 +14,52 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { useAccounts } from "@/features/accounts/hooks/useAccounts";
 import { AccountList } from "@/features/accounts/components/AccountList";
 import { InstitutionPicker } from "@/features/accounts/components/InstitutionPicker";
+import { apiClient, ApiClientError } from "@/lib/api-client";
 import { formatCurrency } from "@/utils/format.utils";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export default function AccountsPage() {
   const { accounts, isLoading, refetch } = useAccounts();
   const [pickerOpen, setPickerOpen] = useState(false);
+
+  const handleTellerSuccess = useCallback(
+    async (authorization: TellerConnectEnrollment) => {
+      try {
+        await apiClient.post("/api/teller/connect", {
+          accessToken: authorization.accessToken,
+          enrollmentId: authorization.enrollment.id,
+          institutionName: authorization.enrollment.institution.name,
+        });
+        toast.success("Account connected");
+        setPickerOpen(false);
+        refetch();
+      } catch (error) {
+        console.error("Teller connect error:", error);
+        toast.error(
+          error instanceof ApiClientError
+            ? error.message
+            : "Failed to connect account. Please try again."
+        );
+      }
+    },
+    [refetch]
+  );
+
+  const { open, ready } = useTellerConnect({
+    applicationId: process.env.NEXT_PUBLIC_TELLER_APPLICATION_ID ?? "",
+    environment:
+      (process.env.NEXT_PUBLIC_TELLER_ENVIRONMENT as
+        | "sandbox"
+        | "development"
+        | "production") ?? "sandbox",
+    onSuccess: handleTellerSuccess,
+    onFailure: (failure: TellerConnectFailure) => {
+      console.error("Teller Connect failure:", failure);
+      toast.error(`Connection failed: ${failure.message}`);
+    },
+    onExit: () => {},
+  });
 
   const { assets, liabilities, netWorth } = useMemo(() => {
     let a = 0;
@@ -30,11 +75,6 @@ export default function AccountsPage() {
     }
     return { assets: a, liabilities: l, netWorth: a - l };
   }, [accounts]);
-
-  const handleConnected = () => {
-    setPickerOpen(false);
-    refetch();
-  };
 
   if (isLoading) {
     return (
@@ -59,7 +99,7 @@ export default function AccountsPage() {
             Connect your financial accounts to get started
           </p>
         </div>
-        <InstitutionPicker onSuccess={refetch} />
+        <InstitutionPicker onOpen={open} ready={ready} />
       </PageContainer>
     );
   }
@@ -112,7 +152,7 @@ export default function AccountsPage() {
             <SheetTitle>Add Account</SheetTitle>
           </SheetHeader>
           <div className="overflow-auto p-6" style={{ maxHeight: "calc(100vh - 5rem)" }}>
-            {pickerOpen && <InstitutionPicker onSuccess={handleConnected} />}
+            <InstitutionPicker onOpen={open} ready={ready} />
           </div>
         </SheetContent>
       </Sheet>

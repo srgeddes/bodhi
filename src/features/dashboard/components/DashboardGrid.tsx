@@ -11,9 +11,19 @@ import "react-resizable/css/styles.css";
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
 export function DashboardGrid() {
-  const layout = useDashboardStore((s) => s.layout);
+  const rawLayout = useDashboardStore((s) => s.layout);
   const isEditing = useDashboardStore((s) => s.isEditing);
   const updateLayout = useDashboardStore((s) => s.updateLayout);
+
+  // Deduplicate layout items to prevent duplicate key errors
+  const layout = useMemo(() => {
+    const seen = new Set<string>();
+    return rawLayout.filter((item) => {
+      if (seen.has(item.i)) return false;
+      seen.add(item.i);
+      return true;
+    });
+  }, [rawLayout]);
 
   const layouts = useMemo(
     () => ({
@@ -33,15 +43,19 @@ export function DashboardGrid() {
 
   const handleLayoutChange = useCallback(
     (currentLayout: ReactGridLayout.Layout[]) => {
-      const updated = currentLayout.map((item) => ({
-        i: item.i,
-        x: item.x,
-        y: item.y,
-        w: item.w,
-        h: item.h,
-        minW: layout.find((l) => l.i === item.i)?.minW,
-        minH: layout.find((l) => l.i === item.i)?.minH,
-      }));
+      // Only keep items that exist in our widget set
+      const validIds = new Set(layout.map((l) => l.i));
+      const updated = currentLayout
+        .filter((item) => validIds.has(item.i))
+        .map((item) => ({
+          i: item.i,
+          x: item.x,
+          y: item.y,
+          w: item.w,
+          h: item.h,
+          minW: layout.find((l) => l.i === item.i)?.minW,
+          minH: layout.find((l) => l.i === item.i)?.minH,
+        }));
       updateLayout(updated);
     },
     [layout, updateLayout],

@@ -5,7 +5,7 @@ import { isToday, isYesterday, format, parseISO } from "date-fns";
 import { CategoryBadge } from "./CategoryBadge";
 import { MerchantLogo } from "@/components/MerchantLogo";
 import { TransactionAmount } from "@/components/TransactionAmount";
-import { isIncome } from "@/utils/transaction.utils";
+import { classifyTransaction } from "@/utils/transaction.utils";
 import { formatCurrency } from "@/utils/format.utils";
 import {
   Table,
@@ -115,7 +115,7 @@ export function TransactionTable({ transactions, onTransactionClick, aggregates 
 
                 {/* Transaction rows */}
                 {group.transactions.map((txn) => {
-                  const transfer = txn.isTransfer ?? false;
+                  const flow = classifyTransaction(txn);
                   const displayName = txn.displayName ?? txn.merchantName ?? txn.name;
 
                   return (
@@ -139,7 +139,7 @@ export function TransactionTable({ transactions, onTransactionClick, aggregates 
                                   Pending
                                 </span>
                               )}
-                              {transfer && (
+                              {flow === "transfer" && (
                                 <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
                                   <span className="size-1.5 rounded-full bg-muted-foreground/50" />
                                   Transfer
@@ -168,7 +168,7 @@ export function TransactionTable({ transactions, onTransactionClick, aggregates 
                       <TableCell className="pr-4 text-right">
                         <TransactionAmount
                           amount={txn.amount}
-                          isTransfer={transfer}
+                          flow={flow}
                           showIcon
                           className="justify-end"
                         />

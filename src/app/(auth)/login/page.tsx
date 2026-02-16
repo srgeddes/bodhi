@@ -69,8 +69,15 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginForm) => {
     setServerError(null);
     try {
-      await login(data.email, data.password);
-      router.replace("/dashboard");
+      const status = await login(data.email, data.password);
+
+      if (status === "mfa_required") {
+        router.replace("/mfa-verify");
+      } else if (status === "verification_required") {
+        router.replace("/verify-email");
+      } else {
+        router.replace("/dashboard");
+      }
     } catch (err) {
       setServerError(err instanceof Error ? err.message : "Login failed");
     }

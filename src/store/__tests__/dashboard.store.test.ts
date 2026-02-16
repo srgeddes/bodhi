@@ -2,21 +2,20 @@ import { useDashboardStore } from "@/store/dashboard.store";
 
 describe("Dashboard Store", () => {
   beforeEach(() => {
-    // Reset store to initial state before each test
     useDashboardStore.setState(useDashboardStore.getInitialState());
   });
 
   it("starts with default widgets", () => {
     const state = useDashboardStore.getState();
-    expect(state.widgets.length).toBe(3);
+    expect(state.widgets.length).toBe(6);
     expect(state.widgets[0].type).toBe("net-worth");
-    expect(state.widgets[1].type).toBe("current-budget");
-    expect(state.widgets[2].type).toBe("recent-transactions");
+    expect(state.widgets[1].type).toBe("account-balances");
+    expect(state.widgets[2].type).toBe("spending-by-category");
   });
 
   it("starts with default layout", () => {
     const state = useDashboardStore.getState();
-    expect(state.layout.length).toBe(3);
+    expect(state.layout.length).toBe(6);
   });
 
   it("isEditing defaults to false", () => {
@@ -27,7 +26,7 @@ describe("Dashboard Store", () => {
   describe("addWidget", () => {
     it("adds widget and layout item", () => {
       const before = useDashboardStore.getState().widgets.length;
-      useDashboardStore.getState().addWidget("test-widget", "Test Widget");
+      useDashboardStore.getState().addWidget("savings-rate", "Savings Rate");
       const after = useDashboardStore.getState();
       expect(after.widgets.length).toBe(before + 1);
       expect(after.layout.length).toBe(before + 1);
@@ -88,17 +87,15 @@ describe("Dashboard Store", () => {
 
   describe("resetLayout", () => {
     it("reverts to defaults", () => {
-      // Modify state
-      useDashboardStore.getState().addWidget("custom", "Custom");
+      useDashboardStore.getState().addWidget("fire-calculator", "FIRE Calc");
       useDashboardStore.getState().toggleEditing();
 
-      // Reset
       useDashboardStore.getState().resetLayout();
 
       const state = useDashboardStore.getState();
       expect(state.isEditing).toBe(false);
-      expect(state.widgets.length).toBe(3);
-      expect(state.layout.length).toBe(3);
+      expect(state.widgets.length).toBe(6);
+      expect(state.layout.length).toBe(6);
     });
   });
 });

@@ -76,12 +76,17 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterForm) => {
     setServerError(null);
     try {
-      await registerUser({
+      const status = await registerUser({
         email: data.email,
         password: data.password,
         name: data.name,
       });
-      router.replace("/dashboard");
+
+      if (status === "verification_required") {
+        router.replace("/verify-email");
+      } else {
+        router.replace("/dashboard");
+      }
     } catch (err) {
       setServerError(err instanceof Error ? err.message : "Registration failed");
     }
@@ -96,7 +101,7 @@ export default function RegisterPage() {
               Create your account
             </TextAnimate>
           </CardTitle>
-          <CardDescription>Get started with Bodhi</CardDescription>
+          <CardDescription>Get started with Trellis</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

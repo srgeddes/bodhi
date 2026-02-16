@@ -40,7 +40,7 @@ export function NetWorthWidget() {
       {/* Hero stat */}
       <div className="shrink-0">
         <div className="flex items-baseline gap-3">
-          <span className={`text-2xl font-bold tabular-nums ${nw.current >= 0 ? "text-[var(--success-text)]" : "text-[var(--error-text)]"}`}>
+          <span className="text-2xl font-bold tabular-nums text-foreground">
             {formatCurrency(nw.current)}
           </span>
           <span
@@ -57,7 +57,7 @@ export function NetWorthWidget() {
       <div className="grid grid-cols-2 gap-4 shrink-0">
         <div>
           <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Assets</p>
-          <p className="text-sm font-semibold tabular-nums text-[var(--success-text)]">
+          <p className="text-sm font-semibold tabular-nums text-foreground">
             {formatCurrency(nw.assets)}
           </p>
         </div>

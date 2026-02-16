@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { Search, ArrowUpRight, ArrowDownRight, ListFilter, X, Receipt } from "lucide-react";
 import { format } from "date-fns";
-import { isIncome, isExpense } from "@/utils/transaction.utils";
+import { classifyTransaction, computeAggregates } from "@/utils/transaction.utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -88,7 +88,7 @@ export function TransactionsPanel() {
     [filters, search, page, subscriptionMerchantNames]
   );
 
-  const { transactions: rawTransactions, total, hasMore, aggregates, isLoading } =
+  const { transactions: rawTransactions, total, hasMore, isLoading } =
     useTransactions(queryString);
 
   const transactions = useMemo(() => {
@@ -99,10 +99,16 @@ export function TransactionsPanel() {
       result = result.filter((t) => !subSet.has(t.merchantName ?? t.name));
     }
 
-    if (flowFilter === "income") return result.filter((t) => isIncome(t.amount));
-    if (flowFilter === "expenses") return result.filter((t) => isExpense(t.amount));
+    if (flowFilter === "income") {
+      return result.filter((t) => classifyTransaction(t) === "income");
+    }
+    if (flowFilter === "expenses") {
+      return result.filter((t) => classifyTransaction(t) === "expense");
+    }
     return result;
   }, [rawTransactions, flowFilter, filters.isSubscription, subscriptionMerchantNames]);
+
+  const clientAggregates = useMemo(() => computeAggregates(transactions), [transactions]);
 
   const handleFiltersChange = useCallback((next: TransactionFilterState) => {
     setFilters(next);
@@ -233,7 +239,7 @@ export function TransactionsPanel() {
             <TransactionTable
               transactions={transactions}
               onTransactionClick={setSelectedTransaction}
-              aggregates={aggregates}
+              aggregates={clientAggregates}
             />
 
             {(page > 0 || hasMore) && (

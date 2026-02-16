@@ -11,6 +11,9 @@ export function accountTypeFromTeller(tellerType: string): AccountType {
   const mapping: Record<string, AccountType> = {
     depository: AccountType.Depository,
     credit: AccountType.Credit,
+    loan: AccountType.Loan,
+    mortgage: AccountType.Loan,
+    investment: AccountType.Investment,
   };
   return mapping[tellerType.toLowerCase()] ?? AccountType.Other;
 }

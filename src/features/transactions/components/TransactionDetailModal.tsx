@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { MerchantLogo } from "@/components/MerchantLogo";
 import { CategoryBadge } from "./CategoryBadge";
 import { formatCurrency, formatDate } from "@/utils/format.utils";
+import { classifyTransaction } from "@/utils/transaction.utils";
 import { cn } from "@/lib/utils";
 import type { TransactionResponseDto } from "@/dtos/transaction";
 
@@ -106,17 +107,20 @@ export function TransactionDetailModal({
 }: TransactionDetailModalProps) {
   if (!transaction) return null;
 
-  const isIncome = transaction.amount > 0;
-  const isTransfer = transaction.isTransfer;
+  const flow = classifyTransaction(transaction);
+  const isTransfer = flow === "transfer";
+  const isIncome = flow === "income";
   const displayName = transaction.displayName ?? transaction.merchantName ?? transaction.name;
   const merchantKey = transaction.merchantName ?? transaction.name;
   const isDetectedSubscription = subscriptionMerchantNames?.includes(merchantKey) ?? false;
 
   const hasFlags =
     transaction.isPending ||
-    transaction.isTransfer ||
+    isTransfer ||
     transaction.isExcluded ||
     isDetectedSubscription;
+
+  const sign = isIncome ? "+" : flow === "expense" ? "\u2212" : "";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -156,7 +160,7 @@ export function TransactionDetailModal({
                     : "text-foreground"
               )}
             >
-              {isIncome ? "+" : "\u2212"}
+              {sign}
               {formatCurrency(Math.abs(transaction.amount), transaction.currency)}
             </span>
           </div>
@@ -168,7 +172,7 @@ export function TransactionDetailModal({
             {transaction.isPending && (
               <FlagBadge icon={Clock} label="Pending" variant="warning" />
             )}
-            {transaction.isTransfer && (
+            {isTransfer && (
               <FlagBadge icon={ArrowLeftRight} label="Transfer" variant="muted" />
             )}
             {transaction.isExcluded && (

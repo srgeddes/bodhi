@@ -6,7 +6,6 @@ import { prisma } from "@/lib/db";
 import { UserMapper } from "@/mappers";
 
 export const POST = withoutAuth(async () => {
-  // Seed demo user if it doesn't exist (idempotent)
   const userId = await seedDemoUser();
 
   const raw = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
@@ -16,7 +15,6 @@ export const POST = withoutAuth(async () => {
   const response = NextResponse.json({
     data: {
       user: UserMapper.toDto(user),
-      token,
     },
   });
 

@@ -4,10 +4,10 @@ import { Plus, Wallet, PieChart, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { BlurFade } from "@/components/ui/blur-fade";
-import { useDashboardStore } from "@/store/dashboard.store";
+import { useDashboardStore, type WidgetType } from "@/store/dashboard.store";
 import { toast } from "sonner";
 
-const quickWidgets = [
+const quickWidgets: { type: WidgetType; title: string; icon: typeof Wallet; description: string }[] = [
   { type: "account-balances", title: "Account Balances", icon: Wallet, description: "See all your balances at a glance" },
   { type: "spending-by-category", title: "Spending by Category", icon: PieChart, description: "Breakdown of where your money goes" },
   { type: "recent-transactions", title: "Recent Transactions", icon: FileText, description: "Your latest transactions" },
@@ -20,7 +20,7 @@ interface CreateFirstWidgetPromptProps {
 export function CreateFirstWidgetPrompt({ onOpenLibrary }: CreateFirstWidgetPromptProps) {
   const addWidget = useDashboardStore((s) => s.addWidget);
 
-  const handleQuickAdd = (type: string, title: string) => {
+  const handleQuickAdd = (type: WidgetType, title: string) => {
     addWidget(type, title);
     toast.success(`${title} added`);
   };

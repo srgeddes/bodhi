@@ -12,6 +12,7 @@ jest.mock("bcryptjs", () => ({
 
 jest.mock("@/lib/auth", () => ({
   signToken: jest.fn().mockReturnValue("mock_token"),
+  signMfaTempToken: jest.fn().mockReturnValue("mock_mfa_temp_token"),
 }));
 
 jest.mock("@/config/constants", () => ({
@@ -28,6 +29,8 @@ function createMockUserRepository(): jest.Mocked<IUserRepository> {
     count: jest.fn(),
     findByEmail: jest.fn(),
     existsByEmail: jest.fn(),
+    updateEmailVerified: jest.fn(),
+    updateMfaEnabled: jest.fn(),
   };
 }
 
@@ -37,6 +40,7 @@ function createTestUser(overrides?: Partial<User>): User {
     email: new Email("test@example.com"),
     passwordHash: "hashed_password",
     name: "Test User",
+    emailVerified: true,
     ...overrides,
   });
 }
@@ -58,18 +62,20 @@ describe("UserService", () => {
       name: "New User",
     };
 
-    it("creates a user and returns a token", async () => {
+    it("creates a user and returns verification_required status", async () => {
       userRepository.existsByEmail.mockResolvedValue(false);
       const createdUser = createTestUser({
         email: new Email("new@example.com"),
         name: "New User",
+        emailVerified: false,
       });
       userRepository.create.mockResolvedValue(createdUser);
 
       const result = await service.register(registerDto);
 
       expect(result.user).toEqual(createdUser);
-      expect(result.token).toBe("mock_token");
+      expect(result.status).toBe("verification_required");
+      expect(result.token).toBeUndefined();
       expect(userRepository.existsByEmail).toHaveBeenCalledWith("new@example.com");
       expect(userRepository.create).toHaveBeenCalled();
     });
@@ -79,7 +85,7 @@ describe("UserService", () => {
 
       await expect(service.register(registerDto)).rejects.toThrow(ConflictError);
       await expect(service.register(registerDto)).rejects.toThrow(
-        "A user with this email already exists"
+        "Unable to create account with this email"
       );
       expect(userRepository.create).not.toHaveBeenCalled();
     });
@@ -103,17 +109,41 @@ describe("UserService", () => {
       password: "correct_password",
     };
 
-    it("returns user and token on valid credentials", async () => {
-      const user = createTestUser();
+    it("returns authenticated status with token on valid credentials", async () => {
+      const user = createTestUser({ emailVerified: true });
       userRepository.findByEmail.mockResolvedValue(user);
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
       const result = await service.login(loginDto);
 
       expect(result.user).toEqual(user);
+      expect(result.status).toBe("authenticated");
       expect(result.token).toBe("mock_token");
       expect(userRepository.findByEmail).toHaveBeenCalledWith("test@example.com");
       expect(bcrypt.compare).toHaveBeenCalledWith("correct_password", "hashed_password");
+    });
+
+    it("returns verification_required when email not verified", async () => {
+      const user = createTestUser({ emailVerified: false });
+      userRepository.findByEmail.mockResolvedValue(user);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+
+      const result = await service.login(loginDto);
+
+      expect(result.status).toBe("verification_required");
+      expect(result.token).toBeUndefined();
+    });
+
+    it("returns mfa_required when MFA is enabled", async () => {
+      const user = createTestUser({ emailVerified: true, mfaEnabled: true });
+      userRepository.findByEmail.mockResolvedValue(user);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+
+      const result = await service.login(loginDto);
+
+      expect(result.status).toBe("mfa_required");
+      expect(result.tempToken).toBe("mock_mfa_temp_token");
+      expect(result.token).toBeUndefined();
     });
 
     it("throws UnauthorizedError when email is not found", async () => {

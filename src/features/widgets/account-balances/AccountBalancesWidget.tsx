@@ -106,7 +106,7 @@ function AccountRow({
           "shrink-0 text-sm font-semibold tabular-nums",
           kind === "debt"
             ? "text-[var(--error-text)]"
-            : "text-[var(--success-text)]"
+            : "text-foreground"
         )}
       >
         {kind === "debt" ? "-" : ""}
@@ -131,7 +131,7 @@ function GroupSection({ group }: { group: AccountGroup }) {
             "text-xs font-semibold tabular-nums",
             group.kind === "debt"
               ? "text-[var(--error-text)]"
-              : "text-[var(--success-text)]"
+              : "text-foreground"
           )}
         >
           {group.kind === "debt" ? "-" : ""}

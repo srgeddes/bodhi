@@ -5,6 +5,9 @@ export class User extends BaseEntity {
   email: Email;
   passwordHash: string;
   name: string | null;
+  emailVerified: boolean;
+  mfaEnabled: boolean;
+  isDemo: boolean;
   monthlyBudget: Money | null;
   dashboardLayout: Record<string, unknown> | null;
 
@@ -13,6 +16,9 @@ export class User extends BaseEntity {
     email: Email;
     passwordHash: string;
     name?: string | null;
+    emailVerified?: boolean;
+    mfaEnabled?: boolean;
+    isDemo?: boolean;
     monthlyBudget?: Money | null;
     dashboardLayout?: Record<string, unknown> | null;
   }) {
@@ -20,6 +26,9 @@ export class User extends BaseEntity {
     this.email = params.email;
     this.passwordHash = params.passwordHash;
     this.name = params.name ?? null;
+    this.emailVerified = params.emailVerified ?? false;
+    this.mfaEnabled = params.mfaEnabled ?? false;
+    this.isDemo = params.isDemo ?? false;
     this.monthlyBudget = params.monthlyBudget ?? null;
     this.dashboardLayout = params.dashboardLayout ?? null;
   }
@@ -28,11 +37,13 @@ export class User extends BaseEntity {
     email: string;
     passwordHash: string;
     name?: string;
+    isDemo?: boolean;
   }): User {
     return new User({
       email: new Email(params.email),
       passwordHash: params.passwordHash,
       name: params.name,
+      isDemo: params.isDemo,
     });
   }
 }

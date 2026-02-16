@@ -4,12 +4,20 @@ const ALGORITHM = "aes-256-gcm";
 const IV_LENGTH = 12;
 const AUTH_TAG_LENGTH = 16;
 
+const REQUIRED_KEY_LENGTH = 32; // 256 bits for AES-256
+
 function getEncryptionKey(): Buffer {
   const key = process.env.ENCRYPTION_KEY;
   if (!key) {
     throw new Error("ENCRYPTION_KEY environment variable is not set");
   }
-  return Buffer.from(key, "hex");
+  const keyBuffer = Buffer.from(key, "hex");
+  if (keyBuffer.length !== REQUIRED_KEY_LENGTH) {
+    throw new Error(
+      `ENCRYPTION_KEY must be ${REQUIRED_KEY_LENGTH * 2} hex characters (${REQUIRED_KEY_LENGTH} bytes for AES-256)`
+    );
+  }
+  return keyBuffer;
 }
 
 export function encrypt(plaintext: string): string {

@@ -5,6 +5,7 @@ import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { InstitutionLogo } from "@/components/InstitutionLogo";
 import { institutions, type Institution } from "@/config/institutions";
 
 const filterTabs = [
@@ -76,13 +77,10 @@ export function InstitutionPicker({ onOpen, ready }: InstitutionPickerProps) {
             className="flex flex-col items-center gap-2 p-4 cursor-pointer hover:bg-accent/50 transition-colors"
             onClick={handleInstitutionClick}
           >
-            <img
-              src={`https://img.logo.dev/${institution.domain}?token=${process.env.NEXT_PUBLIC_LOGO_DEV_TOKEN ?? "demo"}&size=60`}
-              alt={institution.name}
-              className="h-10 w-10 rounded-lg"
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-              }}
+            <InstitutionLogo
+              institutionName={institution.name}
+              size={40}
+              className="rounded-lg"
             />
             <span className="text-xs font-medium text-foreground text-center leading-tight">
               {institution.name}

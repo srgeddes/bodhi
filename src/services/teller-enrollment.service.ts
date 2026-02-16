@@ -14,6 +14,7 @@ import {
   TRANSACTION_SYNC_LOOKBACK_DAYS,
   TRANSACTION_SYNC_OVERLAP_DAYS,
 } from "@/config/constants";
+import { isBillPayment } from "@/utils/transaction.utils";
 
 export class TellerEnrollmentService extends BaseService<TellerEnrollment> {
   protected readonly entityName = "TellerEnrollment";
@@ -208,10 +209,12 @@ export class TellerEnrollmentService extends BaseService<TellerEnrollment> {
     // Negate: Teller positive = money out, but app convention is negative = expense
     const amount = new Money(tellerTxn.amount, "USD").negate();
 
-    // For credit cards and loans, positive amounts (after negation) are bill payments,
-    // not income. Mark them as transfers so they're excluded from income totals.
+    // Detect credit card / loan payments so they're excluded from income totals.
+    // Two signals: (1) positive amount on a credit/loan account, (2) name matches
+    // common payment patterns like "Capital One Mobile Payment".
     const isCreditOrLoan = accountType === AccountType.Credit || accountType === AccountType.Loan;
     const isPaymentToAccount = isCreditOrLoan && amount.toNumber() > 0;
+    const isPaymentByName = isBillPayment(tellerTxn.description);
 
     return {
       userId,
@@ -226,7 +229,7 @@ export class TellerEnrollmentService extends BaseService<TellerEnrollment> {
       subcategory: null,
       categoryConfidence: null,
       categorySource: category ? CategorySource.Teller : null,
-      isTransfer: isPaymentToAccount,
+      isTransfer: isPaymentToAccount || isPaymentByName,
       isPending: tellerTxn.status === "pending",
       tellerType: tellerTxn.type ?? null,
       tellerStatus: tellerTxn.status ?? null,

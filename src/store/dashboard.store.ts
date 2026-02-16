@@ -3,6 +3,9 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { apiClient } from "@/lib/api-client";
+import { WIDGET_TYPES } from "@/dtos/dashboard/dashboard-layout.dto";
+
+export type WidgetType = (typeof WIDGET_TYPES)[number];
 
 export interface LayoutItem {
   i: string;
@@ -16,7 +19,7 @@ export interface LayoutItem {
 
 export interface WidgetConfig {
   id: string;
-  type: string;
+  type: WidgetType;
   title: string;
   settings: Record<string, unknown>;
 }
@@ -25,7 +28,7 @@ interface DashboardState {
   layout: LayoutItem[];
   widgets: WidgetConfig[];
   isEditing: boolean;
-  addWidget: (type: string, title: string, settings?: Record<string, unknown>) => void;
+  addWidget: (type: WidgetType, title: string, settings?: Record<string, unknown>) => void;
   removeWidget: (id: string) => void;
   updateLayout: (layout: LayoutItem[]) => void;
   updateWidgetSettings: (id: string, settings: Record<string, unknown>) => void;
@@ -101,9 +104,15 @@ export const useDashboardStore = create<DashboardState>()(
         }),
 
       updateLayout: (layout) => {
-        set({ layout });
+        const seen = new Set<string>();
+        const deduped = layout.filter((item) => {
+          if (seen.has(item.i)) return false;
+          seen.add(item.i);
+          return true;
+        });
+        set({ layout: deduped });
         const { widgets } = get();
-        syncToServer(layout, widgets);
+        syncToServer(deduped, widgets);
       },
 
       updateWidgetSettings: (id, settings) =>
@@ -150,9 +159,32 @@ export const useDashboardStore = create<DashboardState>()(
         layout: state.layout,
         widgets: state.widgets,
       }),
-      onRehydrateStorage: () => (state) => {
-        if (state?.widgets) {
+      onRehydrateStorage: () => (state, error) => {
+        if (error || !state) return;
+        if (state.widgets) {
           widgetCounter = Math.max(widgetCounter, getMaxWidgetId(state.widgets));
+
+          // Deduplicate widgets
+          const seenWidgets = new Set<string>();
+          const dedupedWidgets = state.widgets.filter((w) => {
+            if (seenWidgets.has(w.id)) return false;
+            seenWidgets.add(w.id);
+            return true;
+          });
+          if (dedupedWidgets.length !== state.widgets.length) {
+            useDashboardStore.setState({ widgets: dedupedWidgets });
+          }
+        }
+        if (state.layout) {
+          const seen = new Set<string>();
+          const dedupedLayout = state.layout.filter((item) => {
+            if (seen.has(item.i)) return false;
+            seen.add(item.i);
+            return true;
+          });
+          if (dedupedLayout.length !== state.layout.length) {
+            useDashboardStore.setState({ layout: dedupedLayout });
+          }
         }
       },
     }

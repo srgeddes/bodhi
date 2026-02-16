@@ -41,7 +41,7 @@ export default function LandingPage() {
 	const handleTryDemo = async () => {
 		setDemoLoading(true);
 		try {
-			const res = await apiClient.post<{ data: { user: { id: string; email: string; name: string | null }; token: string } }>(
+			const res = await apiClient.post<{ data: { user: { id: string; email: string; name: string | null; emailVerified: boolean; mfaEnabled: boolean }; token: string } }>(
 				"/api/auth/demo"
 			);
 			setUser(res.data.user);

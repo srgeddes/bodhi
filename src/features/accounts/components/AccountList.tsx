@@ -1,8 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { Building2 } from "lucide-react";
-import { getInstitutionLogoUrl } from "@/utils/institution-logo.utils";
+import { InstitutionLogo } from "@/components/InstitutionLogo";
 import { formatCurrency, formatLabel } from "@/utils/format.utils";
 import { cn } from "@/lib/utils";
 import type { AccountResponseDto } from "@/dtos/account";
@@ -32,32 +30,6 @@ function groupByInstitution(accounts: AccountResponseDto[]): InstitutionGroup[] 
       }, 0),
     }))
     .sort((a, b) => b.total - a.total);
-}
-
-function InstitutionLogo({ name, size = 36 }: { name: string; size?: number }) {
-  const [failed, setFailed] = useState(false);
-  const logoUrl = getInstitutionLogoUrl(name, size * 2);
-
-  if (!logoUrl || failed) {
-    return (
-      <div
-        className="flex shrink-0 items-center justify-center rounded-full bg-muted"
-        style={{ width: size, height: size }}
-      >
-        <Building2 style={{ width: size * 0.5, height: size * 0.5 }} className="text-muted-foreground" />
-      </div>
-    );
-  }
-
-  return (
-    <img
-      src={logoUrl}
-      alt={name}
-      className="shrink-0 rounded-full object-contain"
-      style={{ width: size, height: size }}
-      onError={() => setFailed(true)}
-    />
-  );
 }
 
 function AccountRow({ account }: { account: AccountResponseDto }) {
@@ -124,7 +96,7 @@ export function AccountList({ accounts }: AccountListProps) {
           {/* Institution header row */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
             <div className="flex items-center gap-3">
-              <InstitutionLogo name={group.name} size={28} />
+              <InstitutionLogo institutionName={group.name} size={28} />
               <span className="text-sm font-medium text-foreground">{group.name}</span>
             </div>
             <span

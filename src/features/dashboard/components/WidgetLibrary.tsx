@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { widgetRegistry, widgetTypes } from "@/features/widgets/registry";
-import { useDashboardStore } from "@/store/dashboard.store";
+import { useDashboardStore, type WidgetType } from "@/store/dashboard.store";
 import { toast } from "sonner";
 
 interface WidgetLibraryProps {
@@ -26,9 +26,9 @@ export function WidgetLibrary({ open, onClose }: WidgetLibraryProps) {
   const widgets = useDashboardStore((s) => s.widgets);
   const [hoveredType, setHoveredType] = useState<string | null>(null);
 
-  const activeTypes = new Set(widgets.map((w) => w.type));
+  const activeTypes = new Set<string>(widgets.map((w) => w.type));
 
-  const handleAdd = (type: string) => {
+  const handleAdd = (type: WidgetType) => {
     const meta = widgetRegistry[type];
     if (!meta) return;
     addWidget(type, meta.title);
@@ -71,7 +71,7 @@ export function WidgetLibrary({ open, onClose }: WidgetLibraryProps) {
                   </div>
                   <Button
                     size="sm"
-                    onClick={() => handleAdd(type)}
+                    onClick={() => handleAdd(type as WidgetType)}
                     disabled={isActive}
                     variant={isActive ? "secondary" : "default"}
                   >
