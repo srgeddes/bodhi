@@ -71,23 +71,13 @@ export function handleApiError(error: unknown): NextResponse {
     );
   }
 
-  const errorMessage = error instanceof Error ? error.message : "Unknown error";
-  const errorName = error instanceof Error ? error.name : "UnknownError";
-  const errorCode = (error as Record<string, unknown>)?.code;
-
   logger.error("Unhandled error", {
-    message: errorMessage,
-    name: errorName,
-    code: errorCode as string | undefined,
+    message: error instanceof Error ? error.message : "Unknown error",
     stack: error instanceof Error ? error.stack : undefined,
   });
 
   return NextResponse.json(
-    {
-      error: "Internal server error",
-      // TEMP DEBUG — remove after fixing production issue
-      debug: { name: errorName, message: errorMessage, code: errorCode },
-    },
+    { error: "Internal server error" },
     { status: 500 }
   );
 }
